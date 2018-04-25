@@ -53,9 +53,9 @@ class PhysicsSim():
 
     def reset(self):
         self.time = 0.0
-        self.pose = np.array([0.0, 0.0, 10.0, 0.0, 0.0, 0.0]) if self.init_pose is None else self.init_pose
-        self.v = np.array([0.0, 0.0, 0.0]) if self.init_velocities is None else self.init_velocities
-        self.angular_v = np.array([0.0, 0.0, 0.0]) if self.init_angle_velocities is None else self.init_angle_velocities
+        self.pose = np.array([0.0, 0.0, 10.0, 0.0, 0.0, 0.0]) if self.init_pose is None else np.copy(self.init_pose)
+        self.v = np.array([0.0, 0.0, 0.0]) if self.init_velocities is None else np.copy(self.init_velocities)
+        self.angular_v = np.array([0.0, 0.0, 0.0]) if self.init_angle_velocities is None else np.copy(self.init_angle_velocities)
         self.linear_accel = np.array([0.0, 0.0, 0.0])
         self.angular_accels = np.array([0.0, 0.0, 0.0])
         self.prop_wind_speed = np.array([0., 0., 0., 0.])
@@ -137,9 +137,11 @@ class PhysicsSim():
             if position[ii] <= self.lower_bounds[ii]:
                 new_positions.append(self.lower_bounds[ii])
                 self.done = True
+                # print("done because 1,", ii)
             elif position[ii] > self.upper_bounds[ii]:
                 new_positions.append(self.upper_bounds[ii])
                 self.done = True
+                # print("done because 2", ii)
             else:
                 new_positions.append(position[ii])
 
@@ -147,4 +149,5 @@ class PhysicsSim():
         self.time += self.dt
         if self.time > self.runtime:
             self.done = True
+            #print("done because 3")
         return self.done
