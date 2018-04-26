@@ -73,7 +73,7 @@ class TakeOffTask():
 
         self.state_size = self.action_repeat * 6
         self.action_low = 600
-        self.action_high = 625
+        self.action_high = 600
         self.action_size = 4
 
         # Goal
@@ -94,16 +94,19 @@ class TakeOffTask():
 
 
         # distancePenalty = 1 -.3*(abs(self.sim.pose[:3] - self.target_pos)).sum()
-        posReward = 0.2 if self.sim.pose[2] > self.sim.init_pose[2] else -0.2
-        vSpeedReward = 0.1 * self.sim.v[2]
+        # posReward = 0.2 if self.sim.pose[2] > self.sim.init_pose[2] else -0.2
+        # vSpeedReward = 0.1 * self.sim.v[2]
         # angularOrientationPenalty = -0.1 * (abs(self.sim.pose[3]) + abs(self.sim.pose[4]) + abs(self.sim.pose[5]))
 
-        reward = posReward + vSpeedReward
+        # reward = posReward + vSpeedReward
 
         # clamp reward between -1 and 1
-        reward = np.tanh(reward)
-
-        return reward
+        # reward = np.tanh(reward)
+        # (-0.3 * np.linalg.norm(self.sim.pose[:3] - self.target_pos)) + 
+        reward = (0.1 * self.sim.v[2])
+        # reward = reward + 0.2 if self.sim.pose[2] > self.sim.init_pose[2] else reward
+        #reward += hVPenalty
+        return np.tanh(reward)
 
     def step(self, rotor_speeds):
         """Uses action to obtain next state, reward, done."""

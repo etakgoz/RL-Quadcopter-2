@@ -27,23 +27,23 @@ class Critic:
         actions = layers.Input(shape=(self.action_size,), name='actions')
 
         # Add hidden layer(s) for state pathway
-        net_states = layers.Dense(units=64, kernel_initializer="uniform")(states)
+        net_states = layers.Dense(units=64, activation='relu', kernel_initializer="uniform")(states)
         net_states = layers.BatchNormalization()(net_states)
         net_states = layers.Activation('relu')(net_states)
         net_states = layers.Dropout(self.dropout_rate)(net_states)
 
-        net_states = layers.Dense(units=32, kernel_initializer="uniform")(net_states)
+        net_states = layers.Dense(units=32, activation='relu', kernel_initializer="uniform")(net_states)
         net_states = layers.BatchNormalization()(net_states)
         net_states = layers.Activation('relu')(net_states)
         net_states = layers.Dropout(self.dropout_rate)(net_states)
 
         # Add hidden layer(s) for action pathway
-        net_actions = layers.Dense(units=64, kernel_initializer="uniform")(actions)
+        net_actions = layers.Dense(units=64, activation='relu', kernel_initializer="uniform")(actions)
         net_actions = layers.BatchNormalization()(net_actions)
         net_actions = layers.Activation('relu')(net_actions)
         net_actions = layers.Dropout(self.dropout_rate)(net_actions)
 
-        net_actions = layers.Dense(units=32, activation='relu')(net_actions)
+        net_actions = layers.Dense(units=32, activation='relu', kernel_initializer="uniform")(net_actions)
         net_actions = layers.BatchNormalization()(net_actions)
         net_actions = layers.Activation('relu')(net_actions)
         net_actions = layers.Dropout(self.dropout_rate)(net_actions)
