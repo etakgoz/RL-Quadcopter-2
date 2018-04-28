@@ -27,24 +27,30 @@ class DDPG():
 
         # Noise process
         self.exploration_mu = 0
-        self.exploration_theta = 0.15
+        self.exploration_theta = 0.25
         self.exploration_sigma = 0.2
         self.noise = OUNoise(self.action_size, self.exploration_mu, self.exploration_theta, self.exploration_sigma)
 
         # Replay memory
-        self.buffer_size = 100000
-        self.batch_size = 64
+        self.buffer_size = 10000
+        self.batch_size = 256
         self.memory = ReplayBuffer(self.buffer_size, self.batch_size)
 
         # Algorithm parameters
-        self.gamma = 0.99  # discount factor
-        self.tau = 0.001  # for soft update of target parameters
+        self.gamma = 0.98  # discount factor
+        self.tau = 0.002  # for soft update of target parameters
 
-    def reset_episode(self):
+
+    def reset_episode(self, reset_state = None):
         self.noise.reset()
-        state = self.task.reset()
-        self.last_state = state
-        return state
+        if reset_state is None:
+            state = self.task.reset()
+            self.last_state = state
+        else:
+            self.last_state = reset_state
+
+
+        return self.last_state
 
     def step(self, action, reward, next_state, done):
          # Save experience / reward
@@ -62,6 +68,7 @@ class DDPG():
         """Returns actions for given state(s) as per current policy."""
         state = np.reshape(state, [-1, self.state_size])
         action = self.actor_local.model.predict(state)[0]
+
         return list(action + self.noise.sample())  # add some noise for exploration
 
     def learn(self, experiences):

@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from physics_sim import PhysicsSim
 
 class Task():
@@ -19,8 +20,8 @@ class Task():
         self.action_repeat = 3
 
         self.state_size = self.action_repeat * 6
-        self.action_low = 600
-        self.action_high = 625
+        self.action_low = 0
+        self.action_high = 900
         self.action_size = 4
 
         # Goal
@@ -50,8 +51,7 @@ class Task():
 
 class TakeOffTask():
     """Task (environment) that defines the goal and provides feedback to the agent."""
-    def __init__(self, init_pose=None, init_velocities=None,
-        init_angle_velocities=None, runtime=5., target_pos=None):
+    def __init__(self, init_pose=None, runtime=5., target_elevation=None):
         """Initialize a Task object.
         Params
         ======
@@ -62,51 +62,35 @@ class TakeOffTask():
             target_pos: target/goal (x,y,z) position for the agent
         """
 
+        if init_pose[2] > target_elevation or target_elevation is None:
+            raise ValueError('Target elevation must be higher than current position!')
+
         # Init Values
-        init_pose = init_pose if init_pose is not None else np.array([0., 0., 10., 0., 0., 0.])
-        init_velocities = init_velocities if init_velocities is not None else np.array([0., 0., 0.])
-        init_angle_velocities = init_angle_velocities if init_angle_velocities is not None else np.array([0., 0., 0.])
+        init_pose = init_pose if init_pose is not None else np.array([0., 0., 1., 0., 0., 0.])
+        init_velocities = np.array([0., 0., 0.])
+        init_angle_velocities = np.array([0., 0., 0.])
 
         # Simulation
         self.sim = PhysicsSim(init_pose, init_velocities, init_angle_velocities, runtime)
         self.action_repeat = 3
 
-        self.state_size = self.action_repeat * 6
-        self.action_low = 600
-        self.action_high = 600
-        self.action_size = 4
+        self.state_size = self.action_repeat * 9
+        self.action_low = 0
+        self.action_high = 900
+        self.action_size = 1
 
-        # Goal
-        self.target_pos = target_pos if target_pos is not None else np.array([0., 0., 20.])
+        self.target_pos = np.copy(init_pose[:3])
+        self.target_pos[2] = target_elevation
 
-    def get_reward(self):
-        """Uses current pose of sim to return reward."""
-        # distanceFromTarget = 1 -.3*(abs(self.sim.pose[:3] - self.target_pos)).sum()
+    def get_reward(self, rotor_speeds):
 
-        #  zV = self.sim.pose[2]
-        hV = abs(self.sim.v[0]) + abs(self.sim.v[1])
-        hVPenalty = -0.1 * hV
+        # distance from target elevation
+        reward = -0.1 * abs(self.target_pos[2] - self.sim.pose[2])
 
-        # print("---")
-        # print(self.sim.pose)
-        # print(self.sim.v)
-        # print("---")
+        # absolute reward when target elevation is reached
+        reward = 10 if math.floor(self.sim.pose[2]) > math.floor(self.target_pos[2]) else reward
 
-
-        # distancePenalty = 1 -.3*(abs(self.sim.pose[:3] - self.target_pos)).sum()
-        # posReward = 0.2 if self.sim.pose[2] > self.sim.init_pose[2] else -0.2
-        # vSpeedReward = 0.1 * self.sim.v[2]
-        # angularOrientationPenalty = -0.1 * (abs(self.sim.pose[3]) + abs(self.sim.pose[4]) + abs(self.sim.pose[5]))
-
-        # reward = posReward + vSpeedReward
-
-        # clamp reward between -1 and 1
-        # reward = np.tanh(reward)
-        # (-0.3 * np.linalg.norm(self.sim.pose[:3] - self.target_pos)) + 
-        reward = (0.1 * self.sim.v[2])
-        # reward = reward + 0.2 if self.sim.pose[2] > self.sim.init_pose[2] else reward
-        #reward += hVPenalty
-        return np.tanh(reward)
+        return reward
 
     def step(self, rotor_speeds):
         """Uses action to obtain next state, reward, done."""
@@ -114,14 +98,18 @@ class TakeOffTask():
         pose_all = []
         for _ in range(self.action_repeat):
             done = self.sim.next_timestep(rotor_speeds) # update the sim pose and velocities
-            reward += self.get_reward() 
+            reward += self.get_reward(rotor_speeds)
             pose_all.append(self.sim.pose)
+            pose_all.append(self.sim.v)
         next_state = np.concatenate(pose_all)
+
+        if math.floor(self.sim.pose[2]) > math.floor(self.target_pos[2]):
+            done = True
+
         return next_state, reward, done
 
     def reset(self):
         """Reset the sim to start a new episode."""
         self.sim.reset()
-        state = np.concatenate([self.sim.pose] * self.action_repeat) 
+        state = np.concatenate([self.sim.pose, self.sim.v] * self.action_repeat)
         return state
-
