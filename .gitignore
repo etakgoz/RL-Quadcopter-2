@@ -1,0 +1,4 @@
+.ipnyb_checkpoints
+__pycache__
+agents/__pycache__
+notes.md
